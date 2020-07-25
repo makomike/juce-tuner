@@ -33,6 +33,8 @@ private:
     Pitchdetect_autocorrelateAudioProcessor& processor;
 
     Label infoLabel;
+    Label flatLabel;
+    Label sharpLabel;
     Pitchdetect_autocorrelateAudioProcessor& getProcessor() const
          {
              return static_cast<Pitchdetect_autocorrelateAudioProcessor&> (processor);

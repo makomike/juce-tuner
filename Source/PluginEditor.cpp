@@ -19,11 +19,24 @@ Pitchdetect_autocorrelateAudioProcessorEditor::Pitchdetect_autocorrelateAudioPro
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     addAndMakeVisible (infoLabel);
+    addAndMakeVisible(flatLabel);
+    addAndMakeVisible(sharpLabel);
+
     infoLabel.setText ("Text input:", juce::dontSendNotification);
     infoLabel.setColour (juce::Label::textColourId, juce::Colours::orange);
     infoLabel.setJustificationType (juce::Justification::centred);
     infoLabel.setFont (juce::Font (20.0f, juce::Font::bold));
     
+    flatLabel.setText("Text input:", juce::dontSendNotification);
+    flatLabel.setColour(juce::Label::textColourId, juce::Colours::orange);
+    flatLabel.setJustificationType(juce::Justification::left);
+    flatLabel.setFont(juce::Font(20.0f, juce::Font::bold));
+
+    sharpLabel.setText("Text input:", juce::dontSendNotification);
+    sharpLabel.setColour(juce::Label::textColourId, juce::Colours::black);
+    sharpLabel.setJustificationType(juce::Justification::right);
+    sharpLabel.setFont(juce::Font(20.0f, juce::Font::bold));
+
     setSize (400, 300);
     startTimer (50);
 }
@@ -48,6 +61,8 @@ void Pitchdetect_autocorrelateAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
         infoLabel.setBounds (0,  50, getWidth(),  30);
+        flatLabel.setBounds(0, 0, getWidth(), 30);
+        sharpLabel.setBounds(0, 0, getWidth(), 30);
 }
 
 template <typename T1, typename T2>
@@ -73,8 +88,8 @@ T1 findClosestKey(const std::map<T1, T2> & data, T1 key)
     return lower->first;
 }
 
-int noteFromPitch(float frequency) {
-    int noteNum = 12 * (log(frequency / 440) / log(2));
+double noteFromPitch(float frequency) {
+    double noteNum = 12 * (log(frequency / 440) / log(2));
     noteNum = round(noteNum) + 69;
     return noteNum;
 }
@@ -83,9 +98,13 @@ float frequencyFromNoteNumber(float note) {
     return 440 * pow(2, (note - 69) / 12);
 }
 
-float centsOffFromPitch(float frequency, float note) {
-    return floor(1200 * (float)log(frequency / frequencyFromNoteNumber(note)) / log(2));
+double centsOffFromPitch(float frequency, float note) {
+    float frqFromNote = frequencyFromNoteNumber(note);
+    float logOfPitch = log(frequency / frqFromNote);
+    return floor(1200 * logOfPitch) / log(2);
 }
+
+
 
 void Pitchdetect_autocorrelateAudioProcessorEditor::timerCallback()
 {
@@ -95,6 +114,8 @@ void Pitchdetect_autocorrelateAudioProcessorEditor::timerCallback()
         if(key <= 0.0f)
         {
             infoLabel.setText("--",juce::dontSendNotification);
+            flatLabel.setText("--", juce::dontSendNotification);
+            sharpLabel.setText("--",juce::dontSendNotification);
             return;
         }
        
@@ -107,16 +128,29 @@ void Pitchdetect_autocorrelateAudioProcessorEditor::timerCallback()
     
 
         //Mapping without frequency
-
-        std::array<String, 12> not = { "B","C","C#","D","Eb","E","F","F#","G","G#","A","Bb"};
+        std::array<String, 12> not = { "C","C#","D","Eb","E","F","F#","G","G#","A","Bb","B"};
 
         int currentKey = noteFromPitch(key);
         int Note = frequencyFromNoteNumber(currentKey);
-        float centsOffPitch = centsOffFromPitch(currentKey, Note);
-
+        float pitchTune = centsOffFromPitch(key, currentKey);
       //  infoLabel.setText((String)data[nearestKey] + " cents: " + (String)cents,juce::dontSendNotification);
     //    infoLabel.setText((String)not[Note % 12] + " cents: " + (String)cents, juce::dontSendNotification);
         infoLabel.setText((String)not[currentKey % 12] + " frequency: " + (String)key,juce::dontSendNotification);
+     
+        if (pitchTune == 0) {
+            flatLabel.setText("--", juce::dontSendNotification);
+            sharpLabel.setText("--", juce::dontSendNotification);
+        }
+        else {
+            if (pitchTune < 0) {
+                flatLabel.setText("flat", juce::dontSendNotification);
+            }
+            else {
+                sharpLabel.setText("sharp", juce::dontSendNotification);
+            
+            }
+        }
+       
  }
 
 
